@@ -20,16 +20,16 @@ N_RB=1525;% The Number of RB molecules
 figure(1);
 
 leg_str = {};
+aves = {};
 y = 2.0:0.1:3.0;
 i_s = 1;
 for LMin_ind=y
-    leg_str{i_s} = strcat(num2str(LMin_ind),'nm');
-    disp(leg_str(i_s));
-    i_s = i_s + 1;
-  
     clear B C
     disp(LMin_ind);
 
+    leg_str{i_s} = strcat(num2str(LMin_ind),'nm');
+    disp(leg_str(i_s));
+ 
     % The size of matrix for placing the dye molecules
     % The maximum number of dye molecules is NxN in 2D and N^3 in 3D
     N=round(L/LMin_ind);
@@ -51,12 +51,15 @@ for LMin_ind=y
     
     ave = zeros(length(x), 1);
     for Fl_ind = 1:num_trials
-        %Creation of matrix (a) with the random distribution of the dyes   
+        %Creation of matrix (a) with the random distribution of the dyes 
+        clear NewIndex
         NewIndex = randperm(numel(B));
+        disp(NewIndex(1));
+        disp(NewIndex(10));
         for i = 1:N^3
             C(i)=B(NewIndex(i));
         end
-        
+
         a=reshape(C,N,N,N);
         % check for paired RB molecules
         % we don't have to check for R6G molecules because each R6G molecule
@@ -71,14 +74,14 @@ for LMin_ind=y
         b = LMin_ind - buff;
         c = LMin_ind + buff;
         % set the random number generator up for the normal dist
-        rng(0, 'twister');
+        rng(Fl_ind, 'twister');
 
         R0=8.79; %fortser distance (nm) 
         QYR6G=0.95; %quantum yield of R6G
         QYRB=0.31; %quantum yield of RB
         AbR6G=0.005;%absorbance of R6G at 488nm (excitation wavelength)
         AbRB=0.001; %absorbance of RB at excitation wavelength 
-        % FLUORENCE FOR THIS TRIAL; build it as we find FRET pairs
+        % Fluorescence FOR THIS TRIAL; build it as we find FRET pairs
         Fl = zeros(length(x), 1);
 
         for i = 1:N
@@ -152,28 +155,25 @@ for LMin_ind=y
 
         % We have been building this fluorescence during the trial as we find FRET pairs
         Fl = Fl + (N_R6G-N_FRET)*QYR6G*AbR6G*q + (N_RB-N_FRET)*QYRB*AbRB*p;
-
         Fl_Table.(strcat('F',int2str(LMin_ind*10) , 'l',int2str(Fl_ind))) = Fl;
-        ave = ave + Fl;       
+        ave = ave + (Fl/max(Fl));  
     end
-    plot(x, ave/num_trials);
-    hold on
+    aves{i_s} = ave / num_trials;
+    i_s = i_s + 1;
 end 
 
-leg_str{i_s}   = "Experimental";
-leg_str{i_s+1} = "Lower Deviation";
-leg_str{i_s+2} = "Upper Deviation";
-
+plot(x, aves{5});
+hold on;
+for i = 6:length(y)
+    plot(x, aves{i});
+end
+leg_str{i_s} = "Experimental";
 % Now get the x indices for the experimental data
 x = xlsread(filename,'A2:A102');
-plot(x, exp);
-hold on
-plot(x, dev_low);
-hold on
-plot(x, dev_up);
-
-hold off
+d = max(exp)/max(ave/num_trials);
+plot(x, exp/d, '--r');
+hold off;
 title("Intensity vs. Wavelength")
 disp(leg_str)
-legend(leg_str, 'Location', 'northwest')
+legend("2.4", "2.5", "2.6", "2.7", "2.8", "2.9", "3.0", "experimental", 'Location', 'northwest')
 writetable(Fl_Table,'../data/norm_dist_dat.csv')
