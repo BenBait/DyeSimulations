@@ -92,7 +92,7 @@ for LMin_ind=y
                        FRET=true; % True when no FRET pairs were associated with this particular R6G molecule
                        % rand returns on value from uniform distribution
                        % between 0 and 1
-                       dist = (c-b)*rand + b;
+                       dist = (c-b)*normrnd(0.5, 0.25) + b;
                        % FRET efficiencey
                        E_FRET = (R0^6) / (R0^6 + dist^6);
 
